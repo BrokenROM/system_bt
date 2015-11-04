@@ -148,7 +148,9 @@ static int  g_server_if_scan = 0;
 
 const btgatt_test_interface_t     *sGattInterface = NULL;
 const  btgatt_interface_t   *sGattIfaceScan = NULL;
+#if SMP_INCLUDED == TRUE
 const btsmp_interface_t    *sSmpIface             = NULL;
+#endif
 const btgap_interface_t    *sGapInterface         = NULL;
 const btl2cap_interface_t *sL2capInterface = NULL;
 
@@ -441,7 +443,7 @@ static tGATT_CBACK gap_cback =
 };
 
 
-
+#if SMP_INCLUDED == TRUE
 /************************************************************************************
 **  SMP Callbacks
 ************************************************************************************/
@@ -477,7 +479,7 @@ static UINT8 SMP_cb (tSMP_EVT event, BD_ADDR bda, tSMP_EVT_DATA *p_data)
     }
     return 0;
 }
-
+#endif
 
 
 
@@ -1015,7 +1017,8 @@ static bt_callbacks_t bt_callbacks = {
     NULL, /* thread_evt_cb */
     dut_mode_recv, /*dut_mode_recv_cb */
     le_test_mode, /* le_test_mode_cb */
-    NULL      /*energy_info_cb*/
+    NULL,      /*energy_info_cb*/
+    NULL   /*hci_event_recv_cb*/
 };
 
 static bt_os_callouts_t bt_os_callbacks = {
@@ -2406,7 +2409,7 @@ static int send_file(char *p)
     uint32_t seq = 0, itration = 1;
     int send_mode, fd, size;
     char filename[] = {0};
-    char *tmpBuf = NULL;
+    char tmpBuf[LE_ACL_MAX_BUFF_SIZE];
     UINT16 lcid;
 
     lcid = get_int(&p, -1);
@@ -2428,7 +2431,6 @@ static int send_file(char *p)
 
     printf("data_size(max patload size) = %ld, g_omtu(max ttansmission unit) = %d",
             data_size, g_omtu);
-    tmpBuf = malloc(data_size);
 
     printf("Filename for input data = %s \n", filename);
 
@@ -2456,7 +2458,6 @@ static int send_file(char *p)
 
     if (num_frames && g_delay && count && !(seq % count))
         usleep(g_delay);
-    free(tmpBuf);
     return TRUE;
 }
 
@@ -2526,10 +2527,12 @@ static void do_le_coc_disconnect(char *p)
  *******************************************************************************/
 void do_smp_init(char *p)
 {
+#if SMP_INCLUDED == TRUE
     sSmpIface->init();
     sleep(1);
     sSmpIface->Register(SMP_cb);
     sleep(1);
+#endif
 }
 
 void do_smp_pair(char *p)
@@ -2537,7 +2540,9 @@ void do_smp_pair(char *p)
     tSMP_STATUS Ret = 0;
     bt_bdaddr_t bd_addr = {{0}};
     if(FALSE == GetBdAddr(p, &bd_addr))    return;
+#if SMP_INCLUDED == TRUE
     Ret = sSmpIface->Pair(bd_addr.address);
+#endif
     printf("%s:: Ret=%d \n", __FUNCTION__, Ret);
 }
 
@@ -2546,7 +2551,9 @@ void do_smp_pair_cancel(char *p)
     BOOLEAN Ret = 0;
     bt_bdaddr_t bd_addr = {{0}};
     if(FALSE == GetBdAddr(p, &bd_addr))    return;
+#if SMP_INCLUDED == TRUE
     Ret = sSmpIface->PairCancel(bd_addr.address);
+#endif
     printf("%s:: Ret=%d \n", __FUNCTION__, Ret);
 }
 
@@ -2556,7 +2563,9 @@ void do_smp_security_grant(char *p)
     bt_bdaddr_t bd_addr = {{0}};
     if(FALSE == GetBdAddr(p, &bd_addr))    return; //arg1
     res = get_int(&p, -1); // arg2
+#if SMP_INCLUDED == TRUE
     sSmpIface->SecurityGrant(bd_addr.address, res);
+#endif
     printf("%s:: Ret=%d \n", __FUNCTION__,res);
 }
 
@@ -2571,7 +2580,9 @@ void do_smp_passkey_reply(char *p)
         printf("res value=%d\n", res);
     passkey = get_int(&p, -1); // arg3
         printf("passkey value=%d\n", passkey);
+#if SMP_INCLUDED == TRUE
     sSmpIface->PasskeyReply(bd_addr.address, res, passkey);
+#endif
     printf("%s:: Ret=%d \n", __FUNCTION__,res);
 }
 
@@ -2738,12 +2749,13 @@ const t_cmd console_cmd_list[] =
     { "s_add_service", do_le_server_add_service, "::", 0 },
 
     { "pair", do_pairing, ":: BdAddr<00112233445566>", 0 },
-
+#if SMP_INCLUDED == TRUE
     { "smp_init", do_smp_init, "::", 0 }, //Here itself we will register.
     { "smp_pair", do_smp_pair, ":: BdAddr<00112233445566>", 0 },
     { "smp_pair_cancel", do_smp_pair_cancel, ":: BdAddr<00112233445566>", 0 },
     { "smp_security_grant", do_smp_security_grant, ":: BdAddr<00112233445566>, res<>", 0 },
     { "smp_passkey_reply", do_smp_passkey_reply, ":: BdAddr<00112233445566>, res<>, passkey<>", 0 },
+#endif
     //{ "smp_encrypt", do_smp_encrypt, "::", 0 },
     { "l2cap_send_data_cid", do_l2cap_send_data_cid, ":: BdAddr<00112233445566>, CID<>", 0 },
 
@@ -2863,8 +2875,12 @@ int main (int argc, char * argv[])
     bdt_enable();
     sleep(5);
     bdt_log("Get SMP IF BT Interface = %x \n", sBtInterface);
+#if BTA_GATT_INCLUDED == TRUE
     sGattInterface   = sBtInterface->get_testapp_interface(TEST_APP_GATT);
+#endif
+#if SMP_INCLUDED == TRUE
     sSmpIface        = sBtInterface->get_testapp_interface(TEST_APP_SMP);
+#endif
     bdt_log("Get GAP IF");
     sGapInterface    = sBtInterface->get_testapp_interface(TEST_APP_GAP);
 

@@ -956,6 +956,7 @@ void BTA_DmSetBlePrefConnParams(BD_ADDR bd_addr,
 *******************************************************************************/
 void BTA_DmSetBleConnScanParams(UINT32 scan_interval, UINT32 scan_window)
 {
+#if BTA_GATT_INCLUDED == TRUE
     tBTA_DM_API_BLE_SCAN_PARAMS  *p_msg;
     if ((p_msg = (tBTA_DM_API_BLE_SCAN_PARAMS *)GKI_getbuf(sizeof(tBTA_DM_API_BLE_SCAN_PARAMS))) != NULL)
     {
@@ -965,8 +966,9 @@ void BTA_DmSetBleConnScanParams(UINT32 scan_interval, UINT32 scan_window)
         p_msg->scan_window      = scan_window;
         bta_sys_sendmsg(p_msg);
     }
+#endif
 }
-
+#if BTA_GATT_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         BTA_DmSetBleScanParams
@@ -1001,7 +1003,7 @@ void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
         bta_sys_sendmsg(p_msg);
     }
 }
-
+#endif
 /*******************************************************************************
 **
 ** Function         BTA_DmSetBleAdvParams
@@ -2169,6 +2171,22 @@ void BTA_VendorCleanup (void)
 
    if(cmn_ble_vsc_cb.adv_inst_max > 0)
       btm_ble_multi_adv_cleanup();
+}
+
+/*******************************************************************************
+**
+** Function         BTA_StopBleTimers
+**
+** Description      This function stops all BLE timers
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_StopBleTimers (void)
+{
+   APPL_TRACE_API("BTA_StopBleTimers");
+   btm_ble_stop_local_rpa_timer();
+   btm_ble_stop_gap_timers();
 }
 
 #endif
