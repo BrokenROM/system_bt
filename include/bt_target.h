@@ -155,10 +155,6 @@
 #define BTA_AV_RET_TOUT 15
 #endif
 
-#ifndef PORCHE_PAIRING_CONFLICT
-#define PORCHE_PAIRING_CONFLICT  TRUE
-#endif
-
 #ifndef BTA_AV_CO_CP_SCMS_T
 #define BTA_AV_CO_CP_SCMS_T  FALSE
 #endif
@@ -901,6 +897,13 @@
 #define BLE_BATCH_SCAN_INCLUDED  TRUE
 #endif
 
+
+/*
+ * Enables or disables support for LE secure connections
+ */
+#ifndef BLE_SC_INCLUDED
+#define BLE_SC_INCLUDED         TRUE
+#endif
 /******************************************************************************
 **
 ** ATT/GATT Protocol/Profile Settings
